@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # College Management System
 
 This workspace contains a starter full-stack college management system.
@@ -61,3 +62,7 @@ The site will be available at `http://localhost:3000`.
 - The frontend fetches data from `http://localhost:8000/api`.
 - If you deploy frontend and backend separately, set `NEXT_PUBLIC_API_BASE_URL`.
 - Use Django admin at `http://localhost:8000/admin/` to add initial subjects before creating student records.
+=======
+# college-management-system
+college-management-system
+>>>>>>> cc3451fdee7e5b1c2cfb4edc8dad8ed2e136e8a4
