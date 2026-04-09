@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Save, Loader2, CheckCircle2, AlertCircle, User, BookOpen, Calculator } from 'lucide-react';
+import { Search, Save, Loader2, CheckCircle2, AlertCircle, User, BookOpen, Calculator, Calendar, GraduationCap, X, ChevronRight, Filter, ClipboardList } from 'lucide-react';
 
 interface Subject {
   id: number;
   name: string;
   code: string;
+}
+
+interface AcademicSession {
+  id: number;
+  name: string;
+  is_active: boolean;
 }
 
 interface Student {
@@ -38,80 +44,139 @@ interface MarkRecord {
 
 export default function ExamsMarksPage() {
   const [exams, setExams] = useState<Exam[]>([]);
-  const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
-  const [rollNumber, setRollNumber] = useState('');
-  const [student, setStudent] = useState<Student | null>(null);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
-  const [marks, setMarks] = useState<Record<number, MarkRecord>>({});
+  const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
   
-  const [searching, setSearching] = useState(false);
+  // Filters & Search
+  const [selectedSession, setSelectedSession] = useState('');
+  const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
+  const [searchRoll, setSearchRoll] = useState('');
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+
+  // Marking State
+  const [activeStudent, setActiveStudent] = useState<Student | null>(null);
+  const [marks, setMarks] = useState<Record<number, MarkRecord>>({});
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Fetch initial data
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/exams/')
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(data => {
-        setExams(data);
-        if (data.length > 0) setSelectedExamId(data[0].id);
-      })
-      .catch(() => console.error("Could not fetch exams"));
-
-    fetch('http://127.0.0.1:8000/api/subjects/')
-      .then(res => res.json())
-      .then(data => setAllSubjects(data));
+    const fetchData = async () => {
+      try {
+        const [examRes, studentRes, subjectRes, sessionRes] = await Promise.all([
+          fetch('http://127.0.0.1:8000/api/exams/'),
+          fetch('http://127.0.0.1:8000/api/students/'),
+          fetch('http://127.0.0.1:8000/api/subjects/'),
+          fetch('http://127.0.0.1:8000/api/academic-sessions/')
+        ]);
+        
+        const examData = await examRes.json();
+        const studentData = await studentRes.json();
+        const subjectData = await subjectRes.json();
+        const sessionData = await sessionRes.json();
+        
+        setExams(examData);
+        setAllStudents(studentData);
+        setAllSubjects(subjectData);
+        setAcademicSessions(Array.isArray(sessionData) ? sessionData : []);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  const handleSearchStudent = async () => {
-    if (!rollNumber) return;
-    setSearching(true);
-    setStudent(null);
-    setMarks({});
+  // Update filtered list based on session/search
+  useEffect(() => {
+    let list = allStudents.filter(s => !selectedSession || s.session === selectedSession);
+    if (searchRoll) {
+      list = list.filter(s => s.roll_number.toLowerCase().includes(searchRoll.toLowerCase()));
+    }
+    
+    // Sort by roll number numerically
+    list.sort((a, b) => {
+      const rollA = parseInt(a.roll_number.replace(/\D/g, '')) || 0;
+      const rollB = parseInt(b.roll_number.replace(/\D/g, '')) || 0;
+      return rollA - rollB;
+    });
+
+    setFilteredStudents(list.slice(0, 10));
+  }, [allStudents, selectedSession, searchRoll]);
+
+  // Load student for marking
+  const selectStudent = async (student: Student) => {
+    if (!selectedExamId) {
+      alert("Please select an exam first.");
+      return;
+    }
+    setSaving(false);
+    setMessage(null);
+    setActiveStudent(student);
+    
+    // Fetch existing marks
+    try {
+      const marksRes = await fetch(`http://127.0.0.1:8000/api/marks/?student=${student.id}&exam=${selectedExamId}`);
+      const existingMarks = await marksRes.json();
+      
+      const marksMap: Record<number, MarkRecord> = {};
+      const studentSubjectIds = [...(student.subjects || [])];
+      if (student.fourth_subject) studentSubjectIds.push(student.fourth_subject);
+
+      studentSubjectIds.forEach(subId => {
+        const existing = existingMarks.find((m: any) => m.subject === subId);
+        marksMap[subId] = {
+          subject_id: subId,
+          cq_marks: existing ? String(existing.cq_marks) : '0',
+          mcq_marks: existing ? String(existing.mcq_marks) : '0',
+          lab_marks: existing ? String(existing.lab_marks) : '0',
+          is_absent: existing ? existing.is_absent : false,
+          full_marks: existing ? String(existing.full_marks) : '100',
+        };
+      });
+      setMarks(marksMap);
+    } catch (err) {
+      console.error("Failed to fetch existing marks", err);
+    }
+  };
+
+  const handleSaveMarks = async () => {
+    if (!activeStudent || !selectedExamId) return;
+    setSaving(true);
     setMessage(null);
 
-    try {
-      const res = await fetch(`http://127.0.0.1:8000/api/students/?roll_number=${rollNumber}`);
-      const data = await res.json();
-      
-      if (data.length > 0) {
-        const foundStudent = data[0];
-        setStudent(foundStudent);
-        
-        // Fetch existing marks for this student and exam
-        if (selectedExamId) {
-          const marksRes = await fetch(`http://127.0.0.1:8000/api/marks/?student=${foundStudent.id}&exam=${selectedExamId}`);
-          const existingMarks = await marksRes.json();
-          
-          const marksMap: Record<number, MarkRecord> = {};
-          
-          // Initialize for all student subjects
-          const studentSubjectIds = [...(foundStudent.subjects || [])];
-          if (foundStudent.fourth_subject) studentSubjectIds.push(foundStudent.fourth_subject);
+    const marksPayload = Object.entries(marks).map(([subId, record]) => ({
+      student: activeStudent.id,
+      exam: selectedExamId,
+      subject: parseInt(subId),
+      cq_marks: parseFloat(record.cq_marks) || 0,
+      mcq_marks: parseFloat(record.mcq_marks) || 0,
+      lab_marks: parseFloat(record.lab_marks) || 0,
+      full_marks: parseFloat(record.full_marks) || 100,
+      is_absent: record.is_absent,
+    }));
 
-          studentSubjectIds.forEach(subId => {
-            const existing = existingMarks.find((m: any) => m.subject === subId);
-            marksMap[subId] = {
-              subject_id: subId,
-              cq_marks: existing ? String(existing.cq_marks) : '0',
-              mcq_marks: existing ? String(existing.mcq_marks) : '0',
-              lab_marks: existing ? String(existing.lab_marks) : '0',
-              is_absent: existing ? existing.is_absent : false,
-              full_marks: existing ? String(existing.full_marks) : '100',
-            };
-          });
-          setMarks(marksMap);
-        }
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/marks/bulk_save/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ marks: marksPayload }),
+      });
+
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Marks saved successfully!' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        setMessage({ type: 'error', text: 'Student not found with this roll number.' });
+        setMessage({ type: 'error', text: 'Failed to save marks. Please check inputs.' });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Failed to connect to server.' });
+      setMessage({ type: 'error', text: 'Connection failed.' });
     } finally {
-      setSearching(false);
+      setSaving(false);
     }
   };
 
@@ -122,230 +187,224 @@ export default function ExamsMarksPage() {
     }));
   };
 
-  const handleSaveMarks = async () => {
-    if (!student || !selectedExamId) return;
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      const savePromises = Object.entries(marks).map(async ([subId, record]) => {
-        // Find if record exists
-        const checkRes = await fetch(`http://127.0.0.1:8000/api/marks/?student=${student.id}&exam=${selectedExamId}&subject=${subId}`);
-        const existing = await checkRes.json();
-        
-        const payload = {
-          student: student.id,
-          exam: selectedExamId,
-          subject: parseInt(subId),
-          cq_marks: parseFloat(record.cq_marks) || 0,
-          mcq_marks: parseFloat(record.mcq_marks) || 0,
-          lab_marks: parseFloat(record.lab_marks) || 0,
-          full_marks: parseFloat(record.full_marks) || 100,
-          is_absent: record.is_absent,
-        };
-
-        const method = existing.length > 0 ? 'PUT' : 'POST';
-        const url = existing.length > 0 
-          ? `http://127.0.0.1:8000/api/marks/${existing[0].id}/` 
-          : `http://127.0.0.1:8000/api/marks/`;
-
-        return fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      });
-
-      const results = await Promise.all(savePromises);
-      if (results.every(r => r.ok)) {
-        setMessage({ type: 'success', text: 'All marks saved successfully!' });
-      } else {
-        setMessage({ type: 'error', text: 'Some marks failed to save. Please check inputs.' });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Connection failed.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const calculateTotal = (record: MarkRecord) => {
     if (record.is_absent) return 'ABS';
     const sum = (parseFloat(record.cq_marks) || 0) + (parseFloat(record.mcq_marks) || 0) + (parseFloat(record.lab_marks) || 0);
     return sum.toFixed(2);
   };
 
-  const inputClass = "w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 outline-none transition";
+  const currentExams = exams.filter(e => e.session === selectedSession);
+
+  if (loading) return <div className="flex h-64 items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Exams & Marks Portal</h1>
-          <p className="text-gray-500 text-sm">Select an exam and search student roll to enter marks.</p>
-        </div>
-        
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Select Exam</label>
-            <select 
-              className="bg-gray-50 border border-gray-200 text-gray-700 py-2 pl-3 pr-8 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-sm font-medium"
-              value={selectedExamId || ''} 
-              onChange={e => setSelectedExamId(Number(e.target.value))}
-            >
-              <option value="">-- Choose Exam --</option>
-              {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name} ({ex.session})</option>)}
-            </select>
+    <div className="max-w-7xl mx-auto space-y-6 pb-20">
+      {/* Header & Main Filters */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="w-full lg:w-auto">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Exams & Marks Portal</h1>
+            <p className="text-gray-400 text-sm font-medium">Select an exam and search student roll to enter marks.</p>
           </div>
-          
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Roll Number</label>
-            <div className="relative">
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+             <div className="relative group w-full sm:w-48">
+              <select 
+                className="w-full bg-gray-50 border border-gray-200 py-2.5 pl-4 pr-10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold appearance-none cursor-pointer"
+                value={selectedSession} 
+                onChange={e => { setSelectedSession(e.target.value); setSelectedExamId(null); setActiveStudent(null); }}
+              >
+                <option value="">SESSION</option>
+                {academicSessions.map(s => <option key={s.id} value={s.name}>{s.name} {s.is_active ? '(Active)' : ''}</option>)}
+              </select>
+              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            <div className="relative group w-full sm:w-64">
+              <select 
+                className="w-full bg-gray-50 border border-gray-200 py-2.5 pl-4 pr-10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold appearance-none cursor-pointer disabled:opacity-50"
+                value={selectedExamId || ''} 
+                disabled={!selectedSession}
+                onChange={e => setSelectedExamId(Number(e.target.value))}
+              >
+                <option value="">SELECT EXAM</option>
+                {currentExams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+              </select>
+              <BookOpen className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input 
                 type="text" 
-                placeholder="Ex. 25301" 
-                className="pl-9 pr-4 py-2 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm w-40"
-                value={rollNumber}
-                onChange={e => setRollNumber(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearchStudent()}
+                placeholder="ROLL NUMBER" 
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold placeholder:text-gray-300" 
+                value={searchRoll}
+                onChange={e => setSearchRoll(e.target.value)}
               />
             </div>
           </div>
-
-          <button 
-            onClick={handleSearchStudent}
-            disabled={searching || !rollNumber || !selectedExamId}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl transition shadow-sm h-[40px] flex items-center gap-2"
-          >
-            {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Search
-          </button>
         </div>
       </div>
 
       {message && (
-        <div className={`flex items-center gap-3 p-4 rounded-xl border ${
+        <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
           message.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-red-50 border-red-100 text-red-800'
         }`}>
-          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
-          <span className="text-sm font-medium">{message.text}</span>
+          {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          <span className="text-sm font-bold">{message.text}</span>
         </div>
       )}
 
-      {student && (
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-6 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                <User size={24} />
+      {/* Marking Content */}
+      {!activeStudent ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center space-y-4">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+            <ClipboardList size={32} />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Ready to enter marks?</h2>
+            <p className="text-gray-400 text-sm max-w-md mx-auto">First select a session and exam at the top, then search for a student by roll number or pick one from the list below.</p>
+          </div>
+          
+          {selectedSession && filteredStudents.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-6">
+              {filteredStudents.map(s => (
+                <button 
+                  key={s.id}
+                  onClick={() => selectStudent(s)}
+                  className="p-3 border border-gray-100 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all text-left group"
+                >
+                  <div className="text-[10px] font-black text-gray-400 group-hover:text-blue-500 uppercase tracking-widest">Roll #{s.roll_number}</div>
+                  <div className="text-xs font-bold text-gray-900 truncate">{s.full_name}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                <User size={28} />
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">{student.full_name}</h2>
-                <div className="flex gap-3 text-xs text-gray-500 font-medium">
-                  <span>Roll: <span className="text-blue-600">#{student.roll_number}</span></span>
-                  <span>Group: <span className="text-emerald-600">{student.group}</span></span>
-                  <span>Session: {student.session}</span>
+              <div className="space-y-0.5">
+                <h2 className="text-2xl font-black text-gray-900">{activeStudent.full_name}</h2>
+                <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                  <span className="flex items-center gap-1.5"><span className="text-blue-600">Roll:</span> #{activeStudent.roll_number}</span>
+                  <span className="flex items-center gap-1.5"><span className="text-blue-600">Group:</span> {activeStudent.group}</span>
+                  <span className="flex items-center gap-1.5"><span className="text-blue-600">Session:</span> {activeStudent.session}</span>
                 </div>
               </div>
             </div>
-            
-            <button 
-              onClick={handleSaveMarks}
-              disabled={saving}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition shadow-lg shadow-emerald-200"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save All Marks
-            </button>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setActiveStudent(null)}
+                className="px-5 py-2.5 bg-gray-50 text-gray-500 font-bold rounded-xl hover:bg-gray-100 transition-all text-sm"
+              >
+                Change Student
+              </button>
+              <button 
+                onClick={handleSaveMarks}
+                disabled={saving}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black px-8 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-100 text-sm uppercase tracking-wide"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save All Marks
+              </button>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                  <th className="p-4 pl-6 flex items-center gap-2"><BookOpen size={14}/> Subject Name</th>
-                  <th className="p-4">CQ Marks</th>
-                  <th className="p-4">MCQ Marks</th>
-                  <th className="p-4">LAB Marks</th>
-                  <th className="p-4 text-center">Absent?</th>
-                  <th className="p-4 text-right pr-6 flex items-center justify-end gap-2"><Calculator size={14}/> Total</th>
+                <tr className="bg-gray-50/80 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                  <th className="p-5 pl-8"><div className="flex items-center gap-2"><ClipboardList size={14}/> Subject Name</div></th>
+                  <th className="p-5">CQ Marks</th>
+                  <th className="p-5">MCQ Marks</th>
+                  <th className="p-5">Lab Marks</th>
+                  <th className="p-5 text-center">Absent?</th>
+                  <th className="p-5 text-right pr-8"><div className="flex items-center justify-end gap-2"><Calculator size={14}/> Total</div></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {Object.keys(marks).length === 0 ? (
-                  <tr><td colSpan={6} className="p-12 text-center text-gray-400 italic">No subject data found for this student.</td></tr>
+                {Object.entries(marks).length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-20 text-center text-gray-400 italic">No subjects found for this student.</td>
+                  </tr>
                 ) : Object.entries(marks).map(([subId, record]) => {
                   const subject = allSubjects.find(s => s.id === parseInt(subId));
                   if (!subject) return null;
                   
                   return (
-                    <tr key={subId} className={`hover:bg-blue-50/30 transition-colors ${record.is_absent ? 'opacity-50 bg-gray-50/50' : ''}`}>
-                      <td className="p-4 pl-6">
-                        <div className="font-bold text-gray-800">{subject.name}</div>
-                        <div className="text-[10px] text-gray-400 font-mono">CODE: {subject.code}</div>
+                    <tr key={subId} className={`group transition-all ${record.is_absent ? 'bg-gray-50/50' : 'hover:bg-blue-50/20'}`}>
+                      <td className="p-5 pl-8">
+                        <div className={`font-bold text-sm transition-colors ${record.is_absent ? 'text-gray-400' : 'text-gray-800 group-hover:text-blue-700'}`}>
+                          {subject.name}
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-wider">Code: {subject.code}</div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-5">
                         <input 
                           type="number" 
-                          className={inputClass} 
-                          disabled={record.is_absent}
+                          step="0.01"
+                          className="w-28 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:opacity-30" 
                           value={record.cq_marks} 
+                          disabled={record.is_absent}
                           onChange={e => updateMark(parseInt(subId), 'cq_marks', e.target.value)} 
                         />
                       </td>
-                      <td className="p-4">
+                      <td className="p-5">
                         <input 
                           type="number" 
-                          className={inputClass} 
-                          disabled={record.is_absent}
+                          step="0.01"
+                          className="w-28 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:opacity-30" 
                           value={record.mcq_marks} 
+                          disabled={record.is_absent}
                           onChange={e => updateMark(parseInt(subId), 'mcq_marks', e.target.value)} 
                         />
                       </td>
-                      <td className="p-4">
+                      <td className="p-5">
                         <input 
                           type="number" 
-                          className={inputClass} 
-                          disabled={record.is_absent}
+                          step="0.01"
+                          className="w-28 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:opacity-30" 
                           value={record.lab_marks} 
+                          disabled={record.is_absent}
                           onChange={e => updateMark(parseInt(subId), 'lab_marks', e.target.value)} 
                         />
                       </td>
-                      <td className="p-4 text-center">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                          checked={record.is_absent} 
-                          onChange={e => updateMark(parseInt(subId), 'is_absent', e.target.checked)} 
-                        />
+                      <td className="p-5 text-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer"
+                            checked={record.is_absent} 
+                            onChange={e => updateMark(parseInt(subId), 'is_absent', e.target.checked)} 
+                          />
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
                       </td>
-                      <td className="p-4 text-right pr-6">
-                        <span className={`text-sm font-black ${record.is_absent ? 'text-red-500' : 'text-blue-700'}`}>
+                      <td className="p-5 text-right pr-8">
+                        <div className={`text-sm font-black transition-colors ${
+                          record.is_absent ? 'text-rose-500' : 'text-blue-700'
+                        }`}>
                           {calculateTotal(record)}
-                        </span>
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            
+            <div className="p-6 bg-gray-50 border-t border-gray-50 flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <span>* Subjects are pulled automatically from student enrollment record.</span>
+              <span>CMS Dynamic Marking v1.0</span>
+            </div>
           </div>
-          
-          <div className="p-4 bg-gray-50/50 flex justify-between items-center text-xs text-gray-400 px-6">
-            <span>* Subjects are pulled automatically from student enrollment record.</span>
-            <span className="font-medium text-gray-500">CMS Dynamic Marking v1.0</span>
-          </div>
-        </div>
-      )}
-      
-      {!student && !searching && (
-        <div className="flex flex-col items-center justify-center p-20 bg-white rounded-2xl border border-dashed border-gray-200">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-            <Calculator className="text-gray-300" size={32} />
-          </div>
-          <h3 className="text-gray-900 font-bold">Ready to grade?</h3>
-          <p className="text-gray-400 text-sm max-w-xs text-center mt-1">Enter a roll number and select an exam to start entering marks for a student.</p>
         </div>
       )}
     </div>

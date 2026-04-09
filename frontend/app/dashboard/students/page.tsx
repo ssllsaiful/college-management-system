@@ -9,6 +9,12 @@ interface Subject {
   code: string;
 }
 
+interface AcademicSession {
+  id: number;
+  name: string;
+  is_active: boolean;
+}
+
 interface Student {
   id: number;
   first_name: string;
@@ -65,6 +71,7 @@ const FOURTH_SUBJECT_CODES: Record<string, string[]> = {
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
+  const [academicSessions, setAcademicSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -91,6 +98,12 @@ export default function StudentsPage() {
     fetch('http://127.0.0.1:8000/api/subjects/')
       .then(res => res.json())
       .then(data => setAllSubjects(data));
+    
+    fetch('http://127.0.0.1:8000/api/academic-sessions/')
+      .then(res => res.json())
+      .then(data => {
+        setAcademicSessions(Array.isArray(data) ? data : []);
+      });
   }, []);
 
   const openAdd = () => {
@@ -144,11 +157,19 @@ export default function StudentsPage() {
       : 'http://127.0.0.1:8000/api/students/';
     const method = editingStudent ? 'PUT' : 'POST';
 
+    // Ensure compulsory subjects are ALWAYS included in the payload
+    const commonIds = allSubjects
+      .filter(s => COMMON_CODES.includes(s.code))
+      .map(s => s.id);
+    
+    const finalSubjects = Array.from(new Set([...form.subjects, ...commonIds]));
+    const finalForm = { ...form, subjects: finalSubjects };
+
     try {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(finalForm),
       });
       if (res.ok) {
         setShowModal(false);
@@ -245,7 +266,7 @@ export default function StudentsPage() {
           </div>
           <div className="flex gap-3">
             {[{ val: groupFilter, set: setGroupFilter, opts: uniqueGroups, def: 'All Groups' },
-              { val: sessionFilter, set: setSessionFilter, opts: uniqueSessions, def: 'All Sessions' }].map(({ val, set, opts, def }) => (
+              { val: sessionFilter, set: setSessionFilter, opts: academicSessions.map(s => s.name), def: 'All Sessions' }].map(({ val, set, opts, def }) => (
               <div key={def} className="relative">
                 <select value={val} onChange={e => set(e.target.value)}
                   className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-sm">
@@ -373,7 +394,16 @@ export default function StudentsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <label className={labelClass}>Session <span className="text-red-500">*</span></label>
-                    <input className={inputClass} value={form.session} onChange={e => setForm(f => ({...f, session: e.target.value}))} placeholder="2025-26" />
+                    <select 
+                      className={inputClass} 
+                      value={form.session} 
+                      onChange={e => setForm(f => ({...f, session: e.target.value}))}
+                    >
+                      <option value="">-- Select Session --</option>
+                      {academicSessions.map(s => (
+                        <option key={s.id} value={s.name}>{s.name} {s.is_active ? '(Active)' : ''}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className={labelClass}>Class</label>

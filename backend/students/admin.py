@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Exam, FeePayment, Mark, Subject, Student
+from .models import Exam, FeePayment, Mark, Subject, Student, AcademicSession
+
+@admin.register(AcademicSession)
+class AcademicSessionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name',)
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):

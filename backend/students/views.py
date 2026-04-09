@@ -2,8 +2,16 @@ from rest_framework import viewsets
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.db.models import Sum, Count
-from .models import Exam, FeePayment, Mark, Subject, Student
-from .serializers import ExamSerializer, FeePaymentSerializer, MarkSerializer, SubjectSerializer, StudentSerializer
+from .models import Exam, FeePayment, Mark, Subject, Student, AcademicSession
+from .serializers import (
+    ExamSerializer, FeePaymentSerializer, MarkSerializer, 
+    SubjectSerializer, StudentSerializer, AcademicSessionSerializer
+)
+
+
+class AcademicSessionViewSet(viewsets.ModelViewSet):
+    queryset = AcademicSession.objects.all()
+    serializer_class = AcademicSessionSerializer
 
 
 class SubjectViewSet(viewsets.ModelViewSet):

@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import Exam, FeePayment, Mark, Subject, Student
+from .models import Exam, FeePayment, Mark, Subject, Student, AcademicSession
+
+
+class AcademicSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AcademicSession
+        fields = ['id', 'name', 'is_active']
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -10,6 +16,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     subjects = serializers.PrimaryKeyRelatedField(many=True, queryset=Subject.objects.all(), required=False)
+    session = serializers.SlugRelatedField(slug_field='name', queryset=AcademicSession.objects.all())
     full_name = serializers.ReadOnlyField()
 
     class Meta:
@@ -30,6 +37,8 @@ class FeePaymentSerializer(serializers.ModelSerializer):
 
 
 class ExamSerializer(serializers.ModelSerializer):
+    session = serializers.SlugRelatedField(slug_field='name', queryset=AcademicSession.objects.all())
+    
     class Meta:
         model = Exam
         fields = ['id', 'name', 'exam_type', 'session', 'date']

@@ -1,5 +1,16 @@
 from django.db import models
 
+class AcademicSession(models.Model):
+    name = models.CharField(max_length=32, unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-name']
+
+    def __str__(self):
+        return self.name
+
 
 class Subject(models.Model):
     name = models.CharField(max_length=120)
@@ -29,7 +40,7 @@ class Student(models.Model):
     mother_name = models.CharField(max_length=120, blank=True)
     mobile = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
-    session = models.CharField(max_length=20)
+    session = models.ForeignKey(AcademicSession, on_delete=models.PROTECT, related_name='students')
     class_name = models.CharField(max_length=3, choices=CLASS_CHOICES)
     group = models.CharField(max_length=20, choices=GROUP_CHOICES)
     roll_number = models.CharField(max_length=32)
@@ -82,7 +93,7 @@ class Exam(models.Model):
 
     name = models.CharField(max_length=120)
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
-    session = models.CharField(max_length=20)
+    session = models.ForeignKey(AcademicSession, on_delete=models.PROTECT, related_name='exams')
     date = models.DateField()
 
     class Meta:
