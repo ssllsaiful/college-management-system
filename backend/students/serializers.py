@@ -36,6 +36,11 @@ class ExamSerializer(serializers.ModelSerializer):
 
 
 class MarkSerializer(serializers.ModelSerializer):
+    total_marks = serializers.SerializerMethodField()
+
     class Meta:
         model = Mark
-        fields = ['id', 'student', 'exam', 'subject', 'obtained_marks', 'full_marks']
+        fields = ['id', 'student', 'exam', 'subject', 'cq_marks', 'mcq_marks', 'lab_marks', 'total_marks', 'full_marks', 'is_absent']
+
+    def get_total_marks(self, obj):
+        return obj.cq_marks + obj.mcq_marks + obj.lab_marks

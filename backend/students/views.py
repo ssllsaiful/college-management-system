@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.db.models import Sum, Count
 from .models import Exam, FeePayment, Mark, Subject, Student
@@ -30,6 +30,28 @@ class ExamViewSet(viewsets.ModelViewSet):
 class MarkViewSet(viewsets.ModelViewSet):
     queryset = Mark.objects.select_related('student', 'exam', 'subject').all()
     serializer_class = MarkSerializer
+
+    @action(detail=False, methods=['post'])
+    def bulk_save(self, request):
+        marks_data = request.data.get('marks', [])
+        saved_marks = []
+        
+        for item in marks_data:
+            mark, created = Mark.objects.update_or_create(
+                student_id=item.get('student'),
+                exam_id=item.get('exam'),
+                subject_id=item.get('subject'),
+                defaults={
+                    'cq_marks': item.get('cq_marks', 0),
+                    'mcq_marks': item.get('mcq_marks', 0),
+                    'lab_marks': item.get('lab_marks', 0),
+                    'full_marks': item.get('full_marks', 100),
+                    'is_absent': item.get('is_absent', False),
+                }
+            )
+            saved_marks.append(MarkSerializer(mark).data)
+            
+        return Response({'status': 'success', 'count': len(saved_marks), 'marks': saved_marks})
 
 @api_view(['GET'])
 def dashboard_stats(request):

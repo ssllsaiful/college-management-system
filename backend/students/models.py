@@ -20,7 +20,7 @@ class Student(models.Model):
     GROUP_CHOICES = [
         ('Science', 'Science'),
         ('Commerce', 'Commerce'),
-        ('Arts', 'Arts'),
+        ('Humanities', 'Humanities'),
     ]
 
     first_name = models.CharField(max_length=120)
@@ -74,9 +74,9 @@ class FeePayment(models.Model):
 
 class Exam(models.Model):
     EXAM_TYPE_CHOICES = [
-        ('Mid', 'Mid Term'),
+        ('Mid-Term', 'Mid-Term'),
         ('Half Yearly', 'Half Yearly'),
-        ('Pre Test', 'Pre Test'),
+        ('Pre-Test', 'Pre-Test'),
         ('Test', 'Test'),
     ]
 
@@ -96,12 +96,18 @@ class Mark(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='marks')
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='marks')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    obtained_marks = models.DecimalField(max_digits=5, decimal_places=2)
+    
+    cq_marks = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    mcq_marks = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    lab_marks = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
     full_marks = models.DecimalField(max_digits=5, decimal_places=2, default=100)
+    is_absent = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('student', 'exam', 'subject')
         ordering = ['student', 'exam', 'subject']
 
     def __str__(self):
-        return f'{self.student} {self.subject} {self.obtained_marks}/{self.full_marks}'
+        total = self.cq_marks + self.mcq_marks + self.lab_marks
+        return f'{self.student} {self.subject}: {total}/{self.full_marks}'

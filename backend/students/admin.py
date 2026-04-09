@@ -25,5 +25,5 @@ class ExamAdmin(admin.ModelAdmin):
 
 @admin.register(Mark)
 class MarkAdmin(admin.ModelAdmin):
-    list_display = ('student', 'exam', 'subject', 'obtained_marks', 'full_marks')
+    list_display = ('student', 'exam', 'subject', 'cq_marks', 'mcq_marks', 'lab_marks', 'full_marks', 'is_absent')
     list_filter = ('exam', 'subject')

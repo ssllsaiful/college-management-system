@@ -27,13 +27,15 @@ const SUBJECT_GROUPS = [
     label: 'Business Studies Group',
     color: 'amber',
     icon: Briefcase,
-    codes: ['253', '277', '292', '109'],
+    // Production Management (286) + Home Science (215) added
+    codes: ['253', '277', '292', '109', '286', '215'],
   },
   {
     label: 'Humanities Group',
     color: 'emerald',
     icon: Users,
-    codes: ['269', '153', '267', '121', '150', '125', '122'],
+    // Civics (269, renamed), Islamic History (267, renamed), Islamic Studies (249) + Home Science (215) added
+    codes: ['269', '267', '249', '121', '150', '125', '122', '215'],
   },
 ];
 

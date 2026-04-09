@@ -44,6 +44,24 @@ const EMPTY_FORM: Omit<Student, 'id' | 'full_name' | 'admission_date'> = {
   note: '',
 };
 
+// ── Subject grouping constants ───────────────────────────────────────────────
+// Compulsory for ALL groups (Bangla, English, ICT)
+const COMMON_CODES = ['101', '107', '275'];
+
+// Departmental subjects per group
+const GROUP_SUBJECT_CODES: Record<string, string[]> = {
+  Science:    ['174', '176', '178', '265'],        // Physics, Chemistry, Biology, Higher Math
+  Commerce:   ['253', '277', '292', '109', '286', '215'], // Accounting, Business Org, Finance, Economics, Production Mgmt, Home Science
+  Humanities: ['269', '267', '249', '121', '150', '125', '122', '215'], // Civics, Islamic History, Islamic Studies, Logic, Social Science, Sociology, Philosophy, Home Science
+};
+
+// Eligible 4th subjects per group
+const FOURTH_SUBJECT_CODES: Record<string, string[]> = {
+  Science:    ['178', '265'],           // Biology, Higher Mathematics
+  Commerce:   ['109', '215', '249'],    // Economics, Home Science, Islamic Studies
+  Humanities: ['215', '249', '109', '267'], // Home Science, Islamic Studies, Economics, Islamic History
+};
+
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
@@ -77,13 +95,23 @@ export default function StudentsPage() {
 
   const openAdd = () => {
     setEditingStudent(null);
-    setForm({ ...EMPTY_FORM });
+    const commonIds = allSubjects
+      .filter(s => COMMON_CODES.includes(s.code))
+      .map(s => s.id);
+    setForm({ ...EMPTY_FORM, subjects: commonIds });
     setFormError('');
     setShowModal(true);
   };
 
   const openEdit = (student: Student) => {
     setEditingStudent(student);
+    const commonIds = allSubjects
+      .filter(s => COMMON_CODES.includes(s.code))
+      .map(s => s.id);
+    
+    // Merge existing subjects with common ones, ensuring uniqueness
+    const subjects = Array.from(new Set([...(student.subjects || []), ...commonIds]));
+
     setForm({
       first_name: student.first_name,
       last_name: student.last_name,
@@ -95,7 +123,7 @@ export default function StudentsPage() {
       class_name: student.class_name,
       group: student.group,
       roll_number: student.roll_number,
-      subjects: student.subjects || [],
+      subjects,
       fourth_subject: student.fourth_subject,
       note: student.note,
     });
@@ -137,12 +165,32 @@ export default function StudentsPage() {
   };
 
   const toggleSubject = (id: number) => {
+    const sub = allSubjects.find(s => s.id === id);
+    if (sub && COMMON_CODES.includes(sub.code)) return; // Don't toggle compulsory subjects
+
     setForm(f => ({
       ...f,
       subjects: f.subjects.includes(id)
         ? f.subjects.filter(s => s !== id)
         : [...f.subjects, id],
     }));
+  };
+
+  // When group changes: keep only common subjects, reset group subjects & 4th subject
+  const handleGroupChange = (newGroup: string) => {
+    const newGroupCodes = GROUP_SUBJECT_CODES[newGroup] || [];
+    const commonIds = allSubjects.filter(s => COMMON_CODES.includes(s.code)).map(s => s.id);
+    
+    const filtered = form.subjects.filter(id => {
+      const sub = allSubjects.find(s => s.id === id);
+      // Keep if it's common OR if it's in the NEW group's valid set
+      return sub && (COMMON_CODES.includes(sub.code) || newGroupCodes.includes(sub.code));
+    });
+
+    // Ensure common subjects are definitely there
+    const finalSubjects = Array.from(new Set([...filtered, ...commonIds]));
+
+    setForm(f => ({ ...f, group: newGroup, subjects: finalSubjects, fourth_subject: null }));
   };
 
   const handleSort = (field: keyof Student) => {
@@ -239,7 +287,7 @@ export default function StudentsPage() {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                       student.group === 'Science' ? 'bg-blue-100 text-blue-800' :
                       student.group === 'Commerce' ? 'bg-amber-100 text-amber-800' :
-                      'bg-purple-100 text-purple-800'}`}>
+                      'bg-emerald-100 text-emerald-800'}`}>
                       {student.group}
                     </span>
                   </td>
@@ -336,10 +384,10 @@ export default function StudentsPage() {
                   </div>
                   <div>
                     <label className={labelClass}>Group</label>
-                    <select className={inputClass} value={form.group} onChange={e => setForm(f => ({...f, group: e.target.value}))}>
+                    <select className={inputClass} value={form.group} onChange={e => handleGroupChange(e.target.value)}>
                       <option value="Science">Science</option>
                       <option value="Commerce">Commerce</option>
-                      <option value="Arts">Arts</option>
+                      <option value="Humanities">Humanities</option>
                     </select>
                   </div>
                   <div>
@@ -349,34 +397,99 @@ export default function StudentsPage() {
                 </div>
               </div>
 
-              {/* Subjects */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3 pb-1 border-b">Subjects</h3>
-                {allSubjects.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic">No subjects found in database.</p>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                    {allSubjects.map(sub => (
-                      <label key={sub.id} className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm ${
-                        form.subjects.includes(sub.id)
-                          ? 'bg-blue-50 border-blue-400 text-blue-800 font-medium'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      }`}>
-                        <input type="checkbox" className="accent-blue-600"
-                          checked={form.subjects.includes(sub.id)}
-                          onChange={() => toggleSubject(sub.id)} />
-                        {sub.name}
-                        {sub.code && <span className="text-xs text-gray-400">({sub.code})</span>}
-                      </label>
-                    ))}
-                  </div>
-                )}
+              {/* ── SUBJECTS (3-phase) ─────────────────────────────────── */}
+              <div className="space-y-5">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide pb-1 border-b">Subjects</h3>
+
+                {/* Phase 1 — Compulsory subjects (all groups) */}
                 <div>
-                  <label className={labelClass}>4th (Optional) Subject</label>
-                  <select className={inputClass} value={form.fourth_subject ?? ''} onChange={e => setForm(f => ({...f, fourth_subject: e.target.value ? Number(e.target.value) : null}))}>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Phase 1 — Compulsory (All Groups)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {allSubjects
+                      .filter(s => COMMON_CODES.includes(s.code))
+                      .map(sub => (
+                        <label
+                          key={sub.id}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm bg-purple-50 border-purple-300 text-purple-800 font-medium cursor-not-allowed opacity-90"
+                        >
+                          <input
+                            type="checkbox"
+                            className="accent-purple-600"
+                            checked={true}
+                            disabled={true}
+                          />
+                          {sub.name}
+                          <span className="text-xs text-gray-400">({sub.code})</span>
+                        </label>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Phase 2 — Group-specific subjects */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Phase 2 — {form.group === 'Humanities' ? 'Humanities' : form.group === 'Commerce' ? 'Business Studies' : 'Science'} Group Subjects
+                  </p>
+                  {allSubjects.filter(s => (GROUP_SUBJECT_CODES[form.group] || []).includes(s.code)).length === 0 ? (
+                    <p className="text-sm text-gray-400 italic">No subjects for this group.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {allSubjects
+                        .filter(s => (GROUP_SUBJECT_CODES[form.group] || []).includes(s.code))
+                        .map(sub => {
+                          const isSelectedAsFourth = form.fourth_subject === sub.id;
+                          return (
+                            <label
+                              key={sub.id}
+                              className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all text-sm ${
+                                isSelectedAsFourth ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200' : 'cursor-pointer'
+                              } ${
+                                form.subjects.includes(sub.id)
+                                  ? 'bg-blue-50 border-blue-400 text-blue-800 font-medium'
+                                  : 'border-gray-200 hover:border-blue-200 text-gray-700'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="accent-blue-600"
+                                checked={form.subjects.includes(sub.id)}
+                                disabled={isSelectedAsFourth}
+                                onChange={() => toggleSubject(sub.id)}
+                              />
+                              {sub.name}
+                              <span className="text-xs text-gray-400">({sub.code})</span>
+                              {isSelectedAsFourth && <span className="text-[10px] text-orange-500 block">Selected as 4th</span>}
+                            </label>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Phase 3 — 4th (optional) subject, filtered by group rules */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Phase 3 — 4th Subject (Optional)</p>
+                  <select
+                    className={inputClass}
+                    value={form.fourth_subject ?? ''}
+                    onChange={e => setForm(f => ({...f, fourth_subject: e.target.value ? Number(e.target.value) : null}))}
+                  >
                     <option value="">-- None --</option>
-                    {allSubjects.map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
+                    {allSubjects
+                      .filter(s => {
+                        const isInCategory = (FOURTH_SUBJECT_CODES[form.group] || []).includes(s.code);
+                        const isAlreadyChecked = form.subjects.includes(s.id);
+                        return isInCategory && !isAlreadyChecked;
+                      })
+                      .map(sub => (
+                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                      ))}
                   </select>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {form.group === 'Science' && 'Science: Biology or Higher Mathematics'}
+                    {form.group === 'Commerce' && 'Business Studies: Economics, Home Science, or Islamic Studies'}
+                    {form.group === 'Humanities' && 'Humanities: Home Science, Islamic Studies, Economics, or Islamic History'}
+                  </p>
                 </div>
               </div>
 
