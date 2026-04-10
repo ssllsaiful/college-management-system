@@ -9,17 +9,17 @@ export default function Home() {
   return (
    <div className="min-h-screen bg-gray-50 font-sans">
       {/* Top Bar */}
-      <div className="bg-[#1a2532] text-white text-sm py-2">
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-6">
+      <div className="bg-[#1a2532] text-white text-xs md:text-sm py-2">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-0">
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
             <div>📞 0241081531, 01754412344</div>
-            <div>✉️ spsc2002@gmail.com</div>
+            <div className="hidden md:block">✉️ spsc2002@gmail.com</div>
           </div>
           <div className="flex items-center gap-4">
-            <div>Established 2003</div>
-            <div>EIN: 108040</div>
+            <div className="hidden sm:block">Established 2003</div>
+            <div className="hidden sm:block">EIN: 108040</div>
            <Link href="/login">
-            <button className="bg-yellow-400 text-blue-900 font-semibold px-4 py-1.5 rounded-md hover:bg-yellow-300 transition">Log in</button>
+            <button className="bg-yellow-400 text-blue-900 font-semibold px-4 py-1.5 rounded-md hover:bg-yellow-300 transition text-xs md:text-sm">Log in</button>
            </Link>
           </div>
         </div>
@@ -27,9 +27,9 @@ export default function Home() {
 
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
+          <div className="flex flex-col md:flex-row items-center text-center md:text-left gap-4">
+            <div className="w-16 h-16 md:w-20 md:h-20 relative">
               <img
                 src="/logo.jpg"
                 alt="South Point School & College Logo"
@@ -37,16 +37,16 @@ export default function Home() {
               />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#1e3a8a]">SOUTH POINT SCHOOL & COLLEGE</h1>
-              <p className="text-sm text-gray-600">“শিক্ষা নিয়ে গড়ব দেশ লাল সবুজের বাংলাদেশ”</p>
+              <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a]">SOUTH POINT SCHOOL & COLLEGE</h1>
+              <p className="text-xs md:text-sm text-gray-600">“শিক্ষা নিয়ে গড়ব দেশ লাল সবুজের বাংলাদেশ”</p>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <button className="px-5 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+          <div className="flex gap-2 md:gap-3">
+            <button className="px-3 md:px-5 py-2 text-[10px] md:text-sm border border-gray-300 rounded hover:bg-gray-50">
               Chairman&apos;s Message
             </button>
-            <button className="px-5 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+            <button className="px-3 md:px-5 py-2 text-[10px] md:text-sm border border-gray-300 rounded hover:bg-gray-50">
               Founder Principal&apos;s Message
             </button>
           </div>
@@ -55,8 +55,8 @@ export default function Home() {
 
       {/* Notice Bar */}
       <div className="bg-[#6b4e31] text-white py-3">
-        <div className="max-w-7xl mx-auto px-6 flex items-center gap-8 text-sm overflow-x-auto whitespace-nowrap">
-          <div className="bg-white text-[#6b4e31] font-bold px-4 py-1 rounded">NOTICE</div>
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center gap-8 text-xs md:text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="bg-white text-[#6b4e31] font-bold px-4 py-1 rounded sticky left-0 shadow-md">NOTICE</div>
           <div>Diploma in Quranic Arabic</div>
           <div>Holiday Notice for Ramadan</div>
           <div>Notice for Rules and Regulations</div>
@@ -66,52 +66,52 @@ export default function Home() {
       </div>
 
       {/* Navigation */}
-      <nav className="bg-[#1e5aa8] text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-8 py-4 text-sm font-medium">
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+      <nav className="bg-[#1e5aa8] text-white sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="flex items-center gap-6 md:gap-8 py-4 text-xs md:text-sm font-medium">
+            <Link href="/" className="flex items-center gap-2 hover:text-yellow-300">
               <HomeIcon size={18} /> Home
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/about-us" className="flex items-center gap-2 hover:text-yellow-300">
               <Info size={18} /> About Us
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/teachers" className="flex items-center gap-2 hover:text-yellow-300">
+              <Users size={18} /> Teachers
+            </Link>
+            <Link href="/academics" className="flex items-center gap-2 hover:text-yellow-300">
               <BookOpen size={18} /> Academics
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/notices" className="flex items-center gap-2 hover:text-yellow-300">
               <Bell size={18} /> Notices
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/clubs" className="flex items-center gap-2 hover:text-yellow-300">
               <Users size={18} /> Clubs
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/gallery" className="flex items-center gap-2 hover:text-yellow-300">
               <ImageIcon size={18} /> Gallery
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/facilities" className="flex items-center gap-2 hover:text-yellow-300">
               <Building2 size={18} /> Facilities
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/career" className="flex items-center gap-2 hover:text-yellow-300">
               <Briefcase size={18} /> Career
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-yellow-300">
+            </Link>
+            <Link href="/contact" className="flex items-center gap-2 hover:text-yellow-300">
               <Mail size={18} /> Contact
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* Action Buttons */}
-      <div className="max-w-7xl mx-auto px-6 py-6 flex gap-4">
-        <button className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-full text-lg transition">
-          English Medium
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 flex flex-col md:flex-row gap-4">
+        <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 md:py-6 rounded-2xl md:rounded-full text-base md:text-lg transition shadow-md">
+          School Section
         </button>
-        <button className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-4 rounded-full text-lg transition">
-          Bangla & English Version
+        <button className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 md:py-6 rounded-2xl md:rounded-full text-base md:text-lg transition shadow-md">
+          College Section
         </button>
-        <button className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 rounded-full text-lg transition">
-          College
-        </button>
-        <button className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-4 rounded-full text-lg transition">
+        <button className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-4 md:py-6 rounded-2xl md:rounded-full text-base md:text-lg transition shadow-md">
           Online Payment
         </button>
       </div>

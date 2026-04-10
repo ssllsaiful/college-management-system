@@ -40,7 +40,7 @@ class Student(models.Model):
     mother_name = models.CharField(max_length=120, blank=True)
     mobile = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
-    session = models.ForeignKey(AcademicSession, on_delete=models.PROTECT, related_name='students')
+    session = models.ForeignKey(AcademicSession, on_delete=models.PROTECT, related_name='students', null=True, blank=True)
     class_name = models.CharField(max_length=3, choices=CLASS_CHOICES)
     group = models.CharField(max_length=20, choices=GROUP_CHOICES)
     roll_number = models.CharField(max_length=32)
@@ -93,7 +93,7 @@ class Exam(models.Model):
 
     name = models.CharField(max_length=120)
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
-    session = models.ForeignKey(AcademicSession, on_delete=models.PROTECT, related_name='exams')
+    session = models.ForeignKey(AcademicSession, on_delete=models.PROTECT, related_name='exams', null=True, blank=True)
     date = models.DateField()
 
     class Meta:
