@@ -5,17 +5,7 @@ import { Home as HomeIcon, Info, ArrowLeft, Users, Calendar, Award } from 'lucid
 
 export default function AboutUsPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] text-sm md:text-base hover:text-blue-700 transition font-semibold">
-            <ArrowLeft size={18} /> Back to Home
-          </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a]">ABOUT OUR COLLEGE</h1>
-          <div className="hidden md:block w-32"></div>
-        </div>
-      </header>
+    <div className="bg-gray-50">
 
       <main className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12 md:space-y-16">
         {/* History Section */}
@@ -92,12 +82,6 @@ export default function AboutUsPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#1a2532] text-white py-12">
-        <div className="max-w-7xl mx-auto px-6 text-center text-sm opacity-60">
-          <p>© 2026 South Point School & College. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

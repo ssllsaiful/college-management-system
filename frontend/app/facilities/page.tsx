@@ -4,16 +4,7 @@ import { ArrowLeft, Building2, Coffee, Bus, Terminal } from 'lucide-react';
 
 export default function FacilitiesPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] text-sm md:text-base hover:text-blue-700 transition font-semibold">
-            <ArrowLeft size={18} /> Back to Home
-          </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a]">CAREER OPPORTUNITIES</h1>
-          <div className="hidden md:block w-32"></div>
-        </div>
-      </header>
+    <div className="bg-gray-50 uppercase">
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
         {[
           { name: "Science Laboratories", icon: Terminal, desc: "Modern labs equipped with latest technology for Physics, Chemistry, and Biology." },

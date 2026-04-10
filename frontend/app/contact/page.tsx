@@ -4,16 +4,7 @@ import { ArrowLeft, Mail, Phone, MapPin, Clock } from 'lucide-react';
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] hover:text-blue-700 transition font-semibold">
-            <ArrowLeft size={20} /> Back to Home
-          </Link>
-          <h1 className="text-2xl font-bold text-[#1e3a8a]">CONTACT US</h1>
-          <div className="w-32"></div>
-        </div>
-      </header>
+    <div className="bg-gray-50 uppercase">
       <main className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="space-y-8">
           <div className="space-y-4">

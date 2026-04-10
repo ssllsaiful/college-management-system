@@ -4,16 +4,7 @@ import { ArrowLeft, ImageIcon, PlayCircle } from 'lucide-react';
 
 export default function GalleryPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] hover:text-blue-700 transition font-semibold">
-            <ArrowLeft size={20} /> Back to Home
-          </Link>
-          <h1 className="text-2xl font-bold text-[#1e3a8a]">EVENT GALLERY</h1>
-          <div className="w-32"></div>
-        </div>
-      </header>
+    <div className="bg-gray-50 uppercase">
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (

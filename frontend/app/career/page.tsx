@@ -4,16 +4,7 @@ import { ArrowLeft, Briefcase, FileCheck, Send } from 'lucide-react';
 
 export default function CareerPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] hover:text-blue-700 transition font-semibold">
-            <ArrowLeft size={20} /> Back to Home
-          </Link>
-          <h1 className="text-2xl font-bold text-[#1e3a8a]">CAREER OPPORTUNITIES</h1>
-          <div className="w-32"></div>
-        </div>
-      </header>
+    <div className="bg-gray-50">
       <main className="max-w-4xl mx-auto px-6 py-12">
         <div className="bg-white rounded-3xl p-12 shadow-sm border border-gray-100 text-center space-y-8">
           <div className="bg-amber-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-amber-600">

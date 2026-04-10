@@ -33,36 +33,7 @@ export default function TeachersPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] hover:text-blue-700 transition font-semibold text-sm md:text-base">
-              <ArrowLeft size={18} className="md:w-5 md:h-5" /> <span className="hidden sm:inline">Back to Home</span>
-            </Link>
-          </div>
-          <div className="text-center flex-1">
-            <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a]">SOUTH POINT SCHOOL & COLLEGE</h1>
-            <p className="text-xs md:text-sm text-gray-600">Teachers Information Directory</p>
-          </div>
-          <div className="w-16 md:w-32"></div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-[#1e5aa8] text-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
-          <div className="flex items-center gap-6 md:gap-8 py-3 md:py-4 text-xs md:text-sm font-medium">
-            <Link href="/" className="flex items-center gap-2 hover:text-yellow-300">
-              <HomeIcon size={18} /> Home
-            </Link>
-            <span className="flex items-center gap-2 text-yellow-300 border-b-2 border-yellow-300 pb-1">
-              <Users size={18} /> Teachers
-            </span>
-          </div>
-        </div>
-      </nav>
+    <div className="bg-gray-50">
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-2 md:px-6 py-6 md:py-8">
@@ -149,12 +120,6 @@ export default function TeachersPage() {
         </div>
       </main>
 
-      {/* Footer (Optional, matches home style) */}
-      <footer className="bg-[#1a2532] text-white py-12 mt-12">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <p>© 2026 South Point School & College. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

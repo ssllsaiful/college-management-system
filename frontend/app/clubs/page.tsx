@@ -4,16 +4,7 @@ import { ArrowLeft, Users, Music, Trophy, Microscope } from 'lucide-react';
 
 export default function ClubsPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a] hover:text-blue-700 transition font-semibold">
-            <ArrowLeft size={20} /> Back to Home
-          </Link>
-          <h1 className="text-2xl font-bold text-[#1e3a8a]">CLUBS & ACTIVITIES</h1>
-          <div className="w-32"></div>
-        </div>
-      </header>
+    <div className="bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
         {[
           { name: "Scout Club", info: "Building character and leadership through outdoor activities.", icon: ShieldCheck },
